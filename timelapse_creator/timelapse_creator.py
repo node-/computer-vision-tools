@@ -10,6 +10,10 @@ def imload(path):
     return image
     #return cv2.resize(image,None,fx=0.5, fy=0.5, interpolation = cv2.INTER_LINEAR)
 
+def addTime(img, text):
+    cv2.putText(img,text, (25, 35), fontFace=cv2.FONT_HERSHEY_DUPLEX, fontScale=1, color=(150,150,150))
+    return img
+
 def create_timelapse(directory, fps, output_path, offset, harmonic, renderProgress=None):
     images = sorted([join(directory, f) for f in listdir(directory) if isfile(join(directory, f)) and ".png" in f.lower()])
     print("Image count: " + str(len(images)))
@@ -25,12 +29,23 @@ def create_timelapse(directory, fps, output_path, offset, harmonic, renderProgre
 
     # write image (k*i + s) for all i=0,...,len(images)
     for i in range(offset, len(images)):
+        try:
+            # get filename (without extension) from full path
+            datestr = basename(images[i]).split(".")[0]
+            date, time = datestr.split("_")
+            time = ":".join(time.split("-"))
+        except ValueError:
+            date, time = "", ""
+
         if (i-offset) % harmonic != 0:
             continue
         img = imload(images[i])
         if img.shape != shape:
             print("Invalid shape: " + str(img.shape))
             continue
+
+        img = addTime(img, date + "  " + time)
+
         writer.write(img)
         if i % 50 == 0:
             print("Progress: " + str(i*1.0 / len(images)))
